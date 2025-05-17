@@ -15,19 +15,38 @@ if uploaded_file:
             df_raw = pd.read_csv(uploaded_file)
         else:
             df_raw = pd.read_excel(uploaded_file, skiprows=6)
-        df = df_raw[['Date', 'Sessions', 'Transactions', 'Purchase revenue']].dropna()
+            df_raw.drop(0, axis=0, inplace=True)
+            df_raw.dropna(axis=1,how='all', inplace=True)
+        # Automatically detect likely columns
+        if df_raw.empty or df_raw.columns.size == 0:
+            st.error("Uploaded file has no valid data or columns.")
+            st.stop()
 
-        # Convert date and sort
-        df['Date'] = pd.to_datetime(df['Date'].astype(float).astype(int).astype(str), format='%Y%m%d', errors='coerce')
-        df.set_index('Date', inplace=True)
+        date_candidates = [col for col in df_raw.columns if 'date' in col.lower()]
+        if not date_candidates:
+            st.error("No column with 'date' found in the header. Please check your file format.")
+            st.stop()
+
+        st.subheader("Raw Data Preview (before processing)")
+        st.dataframe(df_raw.head())
+
+        date_col = st.selectbox("Select the column containing dates", date_candidates)
+
+        # Preserve original date column, keep it named as-is
+        df = df_raw.dropna()
+
+        # Convert selected date column and sort
+        df[date_col] = pd.to_datetime(df[date_col].astype(float).astype(int).astype(str), format='%Y%m%d', errors='coerce')
+        df = df.dropna(subset=[date_col])
+        df.set_index(date_col, inplace=True)
         df = df.sort_index()
 
         st.subheader("Preview of Uploaded Data")
         st.write(df.head())
 
         # Column selection
-        response_col = st.selectbox("Select the response (dependent) variable", df.columns, index=2)
-        control_cols = st.multiselect("Select control (independent) variables", df.columns.difference([response_col]), default=['Sessions'])
+        response_col = st.selectbox("Select the response (dependent) variable", df.columns)
+        control_cols = st.multiselect("Select control (independent) variables", df.columns.difference([response_col]))
 
         # Intervention date selection
         intervention_date = st.date_input("Intervention Date", df.index[int(len(df) * 0.7)].date())
@@ -56,7 +75,6 @@ if uploaded_file:
             st.text(ci.summary(output='report'))
 
             st.subheader("Impact Plot")
-            
             plt.figure(figsize=(15, 6))
             ci.plot()
             plt.xticks(rotation=90)
