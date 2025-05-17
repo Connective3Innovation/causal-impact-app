@@ -73,13 +73,19 @@ if uploaded_file:
             st.text(ci.summary())
             st.subheader("Detailed Report")
             st.text(ci.summary(output='report'))
+            st.subheader("📉 Impact Plot")
+            try:
+        # Clear previous plots to avoid duplication in reruns
+                plt.clf()
+                plt.figure(figsize=(15, 6))
+                
+                ci.plot()
+                plt.xticks(rotation=90)
 
-            st.subheader("Impact Plot")
-            plt.figure(figsize=(15, 6))
-            ci.plot()
-            plt.xticks(rotation=90)
-            fig = plt.gcf()
-            st.pyplot(fig)
+                fig = plt.gcf()
+                st.pyplot(fig)
 
+            except Exception as e:
+                st.error(f"⚠️ Plot failed to render: {e}")
     except Exception as e:
         st.error(f"Error processing file: {e}")

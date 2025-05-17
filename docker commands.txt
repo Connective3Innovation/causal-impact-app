@@ -1,0 +1,2 @@
+gcloud builds submit --tag europe-west2-docker.pkg.dev/c3datahub-308511/streamlit-repo/streamlit-app && gcloud run deploy streamlit-app --image europe-west2-docker.pkg.dev/c3datahub-308511/streamlit-repo/streamlit-app --platform managed --region europe-west2 --allow-unauthenticated --memory=2Gi --max-instances=1
+
